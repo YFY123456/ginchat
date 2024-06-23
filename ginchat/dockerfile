@@ -1,0 +1,35 @@
+# 第一阶段：构建阶段
+FROM golang:latest AS builder
+
+# 设置工作目录
+WORKDIR /app
+
+# 配置 Go 代理
+ENV GOPROXY=https://goproxy.cn
+
+# 复制所有源代码和依赖文件
+COPY . .
+
+# 下载依赖包
+RUN go mod download
+
+# 构建 Go 应用
+RUN go build -o main .
+
+FROM ubuntu:latest
+
+# 设置工作目录
+WORKDIR /app
+
+# 复制构建阶段生成的二进制文件
+COPY --from=builder /app/main /app/main
+
+# 复制模板文件夹
+COPY --from=builder /app/views /app/views
+COPY --from=builder /app/asset /app/asset
+COPY --from=builder /app/index.html /app/index.html
+# 复制配置文件夹
+COPY --from=builder /app/config /app/config
+
+# 设定容器启动时运行的命令
+CMD ["./main"]
